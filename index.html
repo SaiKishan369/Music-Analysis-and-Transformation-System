@@ -1,0 +1,118 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Analysis & Transformation System</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 Music Analysis & Transformation System</h1>
+        
+        <div class="upload-section">
+            <label for="audioFile" class="upload-btn">Choose Audio File</label>
+            <input type="file" id="audioFile" accept="audio/*">
+            <p style="color: white; margin-top: 15px; font-size: 0.9em;">Supported formats: MP3, WAV, OGG, M4A</p>
+        </div>
+
+        <div class="status-message" id="statusMessage"></div>
+        <div class="loading-spinner" id="loadingSpinner"></div>
+
+        <div class="feature-display" id="featureDisplay" style="display: none;">
+            <h3>Extracted Audio Features</h3>
+            <div class="feature-grid" id="featureGrid"></div>
+        </div>
+
+        <div class="controls-grid" id="controlsGrid" style="display: none;">
+            <div class="control-card">
+                <h3>Playback Controls</h3>
+                <div class="slider-container">
+                    <label>Playback Rate: <span id="rateValue">1.0</span>x</label>
+                    <input type="range" id="playbackRate" min="0.5" max="2" step="0.1" value="1">
+                </div>
+                <div class="slider-container">
+                    <label>Volume: <span id="volumeValue">70</span>%</label>
+                    <input type="range" id="volume" min="0" max="100" value="70">
+                </div>
+                <div class="button-group">
+                    <button id="playBtn">▶ Play</button>
+                    <button id="pauseBtn">⏸ Pause</button>
+                    <button id="stopBtn">⏹ Stop</button>
+                </div>
+            </div>
+
+            <div class="control-card">
+                <h3>Audio Effects</h3>
+                <div class="slider-container">
+                    <label>Low Pass Filter: <span id="lowpassValue">20000</span> Hz</label>
+                    <input type="range" id="lowpass" min="100" max="20000" value="20000">
+                </div>
+                <div class="slider-container">
+                    <label>High Pass Filter: <span id="highpassValue">0</span> Hz</label>
+                    <input type="range" id="highpass" min="0" max="5000" value="0">
+                </div>
+                <div class="slider-container">
+                    <label>Distortion: <span id="distortionValue">0</span></label>
+                    <input type="range" id="distortion" min="0" max="100" value="0">
+                </div>
+            </div>
+
+            <div class="control-card">
+                <h3>Synthesis Options</h3>
+                <label>Synthesis Mode:</label>
+                <select id="synthesisMode">
+                    <option value="original">Original</option>
+                    <option value="pitched">Pitch Shifted</option>
+                    <option value="reversed">Reversed</option>
+                    <option value="granular">Granular</option>
+                </select>
+                <div class="slider-container">
+                    <label>Pitch Shift: <span id="pitchValue">0</span> semitones</label>
+                    <input type="range" id="pitchShift" min="-12" max="12" value="0">
+                </div>
+            </div>
+
+            <div class="control-card">
+                <h3>Export Options</h3>
+                <label>Output Format:</label>
+                <select id="outputFormat">
+                    <option value="wav">WAV</option>
+                    <option value="mp3">MP3</option>
+                    <option value="ogg">OGG</option>
+                </select>
+                <label>Sample Rate:</label>
+                <select id="sampleRate">
+                    <option value="44100">44.1 kHz</option>
+                    <option value="48000">48 kHz</option>
+                    <option value="22050">22.05 kHz</option>
+                </select>
+                <button id="exportBtn" style="margin-top: 15px; width: 100%;">📥 Export Audio</button>
+            </div>
+        </div>
+
+        <div class="separator-controls" id="separatorControls" style="display: none;">
+            <h3>Component Separation</h3>
+            <p style="color: #666; margin-bottom: 15px;">Isolate different musical components</p>
+            <div class="button-group">
+                <button id="separateVocals">Vocals</button>
+                <button id="separateDrums">Drums</button>
+                <button id="separateBass">Bass</button>
+                <button id="separateOther">Other</button>
+                <button id="playOriginal">Original Mix</button>
+            </div>
+            <ul class="track-list" id="trackList"></ul>
+        </div>
+
+        <div class="visualization-container" id="visualizationContainer" style="display: none;">
+            <canvas id="waveformCanvas" height="200"></canvas>
+            <canvas id="spectrumCanvas" height="200"></canvas>
+        </div>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script src="js/audio_system.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
