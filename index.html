@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spleeter Web UI</title>
+    <!-- Using Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom font */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Simple spinner animation */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #09f;
+            animation: spin 1s ease infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+
+    <div class="bg-white rounded-2xl shadow-xl p-8 md:p-12 w-full max-w-lg mx-4">
+        
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800">Audio Stem Separator</h1>
+            <p class="text-gray-500 mt-2">Powered by Spleeter</p>
+        </div>
+
+        <!-- File Upload Area -->
+        <div id="upload-area">
+            <label for="audio-file-input" class="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                    <svg class="w-10 h-10 mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                    <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Click to upload</span> or drag and drop</p>
+                    <p class="text-xs text-gray-500">MP3, WAV, FLAC</p>
+                </div>
+                <input id="audio-file-input" type="file" class="hidden" accept="audio/*" />
+            </label>
+            <p id="file-name" class="text-center text-gray-600 mt-4 h-6"></p>
+        </div>
+        
+        <!-- Process Button -->
+        <button id="process-button" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-all duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed mt-4">
+            Separate Stems
+        </button>
+
+        <!-- Status/Result Area -->
+        <div id="status-area" class="mt-6 text-center h-12 flex items-center justify-center">
+            <!-- Spinner will be shown here -->
+        </div>
+
+    </div>
+
+    <script>
+        // Get references to the DOM elements
+        const fileInput = document.getElementById('audio-file-input');
+        const processButton = document.getElementById('process-button');
+        const statusArea = document.getElementById('status-area');
+        const fileNameDisplay = document.getElementById('file-name');
+        const uploadArea = document.getElementById('upload-area');
+
+        let selectedFile = null;
+
+        // --- Initial State ---
+        processButton.disabled = true;
+
+        // --- Event Listeners ---
+        fileInput.addEventListener('change', handleFileSelect);
+
+        // Add drag and drop listeners
+        uploadArea.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            uploadArea.firstElementChild.classList.add('border-blue-500', 'bg-blue-50');
+        });
+        uploadArea.addEventListener('dragleave', (event) => {
+            event.preventDefault();
+            uploadArea.firstElementChild.classList.remove('border-blue-500', 'bg-blue-50');
+        });
+        uploadArea.addEventListener('drop', (event) => {
+            event.preventDefault();
+            uploadArea.firstElementChild.classList.remove('border-blue-500', 'bg-blue-50');
+            const files = event.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                handleFileSelect();
+            }
+        });
+
+        processButton.addEventListener('click', handleProcessRequest);
+
+        // --- Functions ---
+        function handleFileSelect() {
+            selectedFile = fileInput.files[0];
+            if (selectedFile) {
+                fileNameDisplay.textContent = selectedFile.name;
+                processButton.disabled = false;
+            } else {
+                fileNameDisplay.textContent = '';
+                processButton.disabled = true;
+            }
+        }
+
+        async function handleProcessRequest() {
+            if (!selectedFile) {
+                showStatus('Please select a file first.', 'error');
+                return;
+            }
+
+            processButton.disabled = true;
+            processButton.textContent = 'Processing...';
+            showStatus('<div class="spinner"></div>', 'loading');
+
+            const formData = new FormData();
+            formData.append('audioFile', selectedFile);
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/process', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    
+                    // --- NEW DEBUGGING LOGS ---
+                    console.log('Received blob from server.');
+                    console.log('Blob size:', blob.size, 'bytes');
+                    console.log('Blob type:', blob.type);
+                    // --- END DEBUGGING LOGS ---
+
+                    // Check if the blob size is greater than 0 to ensure it's not an empty file
+                    if (blob.size > 0) {
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.style.display = 'none';
+                        a.href = url;
+                        
+                        const originalFilename = selectedFile.name.split('.').slice(0, -1).join('.');
+                        a.download = `${originalFilename}_stems.zip`;
+                        
+                        document.body.appendChild(a);
+                        a.click();
+                        
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+
+                        showStatus('Success! Your download should start now.', 'success');
+                    } else {
+                        showStatus('Error: Received an empty file from the server.', 'error');
+                    }
+
+                } else {
+                    const errorData = await response.json();
+                    console.error('Server Error:', errorData.error, errorData.details);
+                    showStatus(`Error: ${errorData.error}`, 'error');
+                }
+
+            } catch (error) {
+                console.error('Network or other error:', error);
+                showStatus('An error occurred. Could not connect to the server.', 'error');
+            } finally {
+                processButton.disabled = false;
+                processButton.textContent = 'Separate Stems';
+            }
+        }
+
+        function showStatus(message, type) {
+            statusArea.innerHTML = message;
+            statusArea.className = 'mt-6 text-center h-12 flex items-center justify-center '; // Reset classes
+            if (type === 'error') {
+                statusArea.classList.add('text-red-600');
+            } else if (type === 'success') {
+                statusArea.classList.add('text-green-600');
+            } else if (type === 'loading') {
+                // No extra class needed for the spinner
+            } else {
+                statusArea.classList.add('text-gray-600');
+            }
+        }
+    </script>
+</body>
+</html>
